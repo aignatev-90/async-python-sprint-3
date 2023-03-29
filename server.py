@@ -21,13 +21,20 @@ class EchoServer(object):
         if and_loop:
             self._loop.close()
 
-    @asyncio.coroutine
-    def handle_connection(self, reader, writer):
+
+    async def handle_connection(self, reader, writer):
         peername = writer.get_extra_info('peername')
         logging.info('Accepted connection from {}'.format(peername))
         while not reader.at_eof():
             try:
-                data = yield from asyncio.wait_for(reader.readline(), timeout=10.0)
+                writer.write(b'enter your login')
+                user_login = await asyncio.wait_for(reader.readline(), timeout=10)
+                logging.info('User {} entered'.format(user_login.decode()))
+                writer.write(b'choose chat:\nmain - main chat\nprivate_chat')
+                chosen_chat = await asyncio.wait_for(reader.readline(), timeout=10)
+                logging.info('User {} chose chat {}'.format(user_login.decode(), chosen_chat.decode()))
+                data = await asyncio.wait_for(reader.readline(), timeout=10)
+                print(data)
                 writer.write(data)
             except concurrent.futures.TimeoutError:
                 break
