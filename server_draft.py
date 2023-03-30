@@ -63,7 +63,7 @@ class Server():
             username = data['name']
             if Server._user_exists(str(username), USERS):
                 logging.info('User {} logged in'.format(username))
-                response_obj = Server._show_main_chat(4)
+                response_obj = 'Successfully logged in\n' + Server._show_main_chat(4)
                 return web.Response(text=response_obj, status=200)
             else:
                 logging.info('User {} not found'.format(username))
@@ -75,7 +75,7 @@ class Server():
 
 
     async def registration(self, request):
-        data = await request.text()  # dict
+        data = await request.text()
         username = str(data)
         try:
             logging.info('Creating user {}'.format(username))
@@ -95,9 +95,19 @@ class Server():
             response_obj = { 'status': 'failed', 'message': str(e) }
             return web.Response(text=json.dumps(response_obj), status=500)
 
+
+
     async def post_to_main_chat(self, request):
-        # data = await request
-        pass
+        message = await request.text()
+        try:
+            with open(MAIN_CHAT, 'a') as f:
+                f.write(message)
+            logging.info('message added')
+            response_obj = Server._show_main_chat(4)
+        except PermissionError:
+            response_obj = "Can't connect to main chat database"
+            logging.error(response_obj)
+        return web.Response(text=response_obj)
 
 
 
