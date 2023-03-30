@@ -23,37 +23,29 @@ async def create_session():
 
 async def main_chat():
     async with aiohttp.ClientSession() as session:
-        async with session.get('http://localhost:2007/main') as resp:
-            # print(resp.status)
+        async with session.get('http://localhost:2007/') as resp:
             print(await resp.text())
 
 
-async def hello_chat():
+async def login(username: str) -> None:
     async with aiohttp.ClientSession() as session:
-        async with session.get('http://localhost:2007/hello') as resp:
-            # print(resp.status)
+        async with session.post('http://localhost:2007/login', json={'name': username}) as resp:
+            print(await resp.text())
+
+
+async def registration(username: str) -> None:
+    async with aiohttp.ClientSession() as session:
+        async with session.post('http://localhost:2007/registration', data=username) as resp:
             print(await resp.text())
 
 
 async def main():
-    async with aiohttp.ClientSession('http://127.0.0.1:2007') as session:
-        async with session.get('/get') as resp:
-            print(await resp.text())
-        async with session.post('/post', data=)
-            print(await resp.text())
+    tasks = [registration('masha'), registration('pasha'), registration('dasha')]
+    await asyncio.gather(*tasks)
 
 
-
-
-
-while True:
+if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    logging.info(MENU)
-    # session = asyncio.run(create_session())
-    command = input()
-    if command == 'main':
-        asyncio.run(hello_chat())
-    # if command == 'hello':
-    #     asyncio.run(hello_chat())
+    #logging.info(MENU)
 
-
+    asyncio.run(main())
