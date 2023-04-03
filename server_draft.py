@@ -5,11 +5,14 @@ import json
 import logging
 import os
 
+
+
+CWD = os.getcwd()
 HOST = 'localhost'
 PORT = 2007
 USERS = 'users.json'  # users db
 MAIN_CHAT = 'main_chat.json'
-# USERS_IDs = 'user_id.txt'
+FOLDER = 'private_chats'
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -44,7 +47,11 @@ class Server():
                     object_id = 1
             return object_id
         except (PermissionError, FileNotFoundError, FileExistsError):
-            logging.error("Can't reach users database. Failed to log in")
+            object_id = 1
+
+        return object_id
+            # logging.error("Can't reach users database. Failed to log in")
+
 
 
     @staticmethod
@@ -62,19 +69,38 @@ class Server():
 
 
     @staticmethod
-    async def _show_main_chat(entries: int) -> str:
+    async def _show_chat(source_chat: str, entries: int) -> str:
         try:
             chat = ''
             output = ''
-            with open(MAIN_CHAT, 'r') as f:
+            with open(source_chat, 'r') as f:
                 data = json.load(f)
                 for entry in data['messages'][-entries:]:
                     chat += "{} {}: {} \n".format(entry['time'], entry['author'], entry['text'])
-            print(chat)
             return chat
         except (PermissionError, FileNotFoundError, FileExistsError):
-            logging.error("Can't reach main chat database")
+            logging.error("Can't reach chat database")
 
+
+    @staticmethod
+    def _post_to_private_chat(sender, receiver, cwd, folder, req_data):
+        users = []
+        users.extend([sender, receiver])
+        users.sort()
+        filename = str(users[0]) + '_' + str(users[1]) + '.json'
+        path = os.path.join(CWD, FOLDER, filename)
+        message_id = Server._set_id(path, 'messages')
+        req_data['id'] = message_id
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                chat_entries = json.load(f)
+                chat_entries['messages'].append(req_data)
+            with open(path, 'w') as f:
+                f.write(json.dumps(chat_entries, indent=4))
+        else:
+            holder = {"messages": [req_data]}
+            with open(path, 'a') as f:
+                f.write(json.dumps(holder, indent=4))
 
 
     # async def login(self, request):
@@ -119,7 +145,7 @@ class Server():
 
 
     async def get_main_chat(self, request):
-        response_obj = await Server._show_main_chat(self.limiter)
+        response_obj = await Server._show_chat(MAIN_CHAT, self.limiter)
         return web.Response(text=response_obj)
 
 
@@ -136,7 +162,6 @@ class Server():
                 with open(MAIN_CHAT, 'w') as f:
                     f.write(json.dumps(chat_entries, indent=4))
                 logging.info('Message added')
-                # response_obj = await Server._show_main_chat(self.limiter)
                 response_obj = 'Message added'
             else:
                 response_obj = "Message wasn't sent. User with this username doesn't exist"
@@ -161,14 +186,38 @@ class Server():
         return web.Response(text=response_obj)
 
 
+    async def post_to_private_chat(self, request):
+        sender, receiver = request.match_info['users'].split('_')
+        data = await request.json()
+        if self._user_exists(sender, USERS) and self._user_exists(receiver, USERS):
+            self._post_to_private_chat(sender=sender, receiver=receiver, cwd=CWD, folder=FOLDER, req_data=data)
+            response_obj = 'Message added'
+            logging.info('Message from {} to {} sent in private chat'.format(sender, receiver))
+        else:
+            logging.error("Can't create chat. One of the users doesn't exist.")
+            response_obj = "Can't create chat. One of the users doesn't exist."
+        return web.Response(text=response_obj)
+
+
+    async def get_private_chat(self, request):
+        user_1, user_2 = request.match_info['users'].split('_')
+        users = []
+        users.extend([user_1, user_2])
+        users.sort()
+        filename = str(users[0]) + '_' + str(users[1] + '.json')
+        path_to_chat = os.path.join(CWD, FOLDER, filename)
+        response_obj = await Server._show_chat(path_to_chat, self.limiter)
+        return web.Response(text=response_obj)
+
 
 if __name__ == '__main__':
     server = Server(host='localhost', port=2007, limiter=4)
     server.add_routing([
         web.post('/registration', server.registration),
-        # web.post('/login', server.login),
         web.post('/main_chat', server.post_to_main_chat),
         web.get('/main_chat', server.get_main_chat),
         web.get('/info', server.show_status),
+        web.post('/private_chat{users}', server.post_to_private_chat),
+        web.get('/private_chat/{users}', server.get_private_chat),
     ])
     server.start()

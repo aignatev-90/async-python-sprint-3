@@ -4,7 +4,7 @@ import aiohttp
 import asyncio
 import logging
 from datetime import datetime
-from utils import create_user, create_message
+from utils import create_user, create_message, create_private_message
 
 
 
@@ -21,11 +21,9 @@ MENU = 'Welcome to chat. Commands:\n' \
 
 
 class Client():
-    def __init__(self, url):
+    def __init__(self, url, username):
         self.url = url
-        self.chat_map = {
-            'main_chat': 'main_chat'
-        }
+        self.username = username
 
     async def show_status(self) -> None:
         async with aiohttp.ClientSession() as session:
@@ -39,9 +37,9 @@ class Client():
     #             print(await resp.text())
 
 
-    async def registration(self, username: str) -> None:
+    async def registration(self) -> None:
         async with aiohttp.ClientSession() as session:
-            data = await create_user(username)
+            data = await create_user(self.username)
             async with session.post(self.url+'registration', data=json.dumps(data)) as resp:
                 print(await resp.text())
 
@@ -52,29 +50,46 @@ class Client():
                 print(await resp.text())
 
 
-    async def send_message_to_chat(self, username: str, message: str) -> None:
+    async def send_message_to_chat(self, message: str) -> None:
         async with aiohttp.ClientSession() as session:
-            data = await create_message(username, message)
+            data = await create_message(self.username, message)
             async with session.post(self.url + 'main_chat', data=json.dumps(data)) as resp:
                 print(await resp.text())
 
 
-    async def send_message_to_user(self, username:str, receiver: str, message: str):
+    async def send_message_to_user(self, receiver: str, message: str):
+        """private chat"""
         async with aiohttp.ClientSession() as session:
-            data = await create_message(username, message)
-            async with session.post(self.url + 'chat_' + str() + '_')
+            data = await create_private_message(self.username, receiver, message)
+            async with session.post(self.url + 'private_chat' + self.username + '_' + receiver, data=json.dumps(data)) as resp:
+                print(await resp.text())
+
+
+    async def open_private_chat(self, receiver: str):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.url + 'private_chat/' + self.username + '_' + receiver) as resp:
+                print(await resp.text())
+
+
 
 
 async def main():
-    client = Client('http://localhost:2007/')
-    # tasks = [client.registration('misha')]
+    client = Client('http://localhost:2007/', username='kolya',)
+    # client = Client('http://localhost:2007/', username='julia',)
+
+    # tasks = [client.registration()]
     # tasks = [
     #     client.handle_user('andrey'),
     #     client.send_message_to_chat(username='andrey', message='hello'),
     #     client.send_message_to_chat(username='masha', message='priuet'),
     # ]
-    tasks = [client.send_message_to_chat(username='katya', message='salut'), client.show_main_chat()]
+    # tasks = [client.send_message_to_chat(message='salut'), client.show_main_chat()]
     # tasks = [client.show_main_chat()]
+
+    tasks = [client.send_message_to_user('katya', 'test_1!')]# ,client.send_message_to_user('julia', 'test_2!')]
+
+    # tasks = [client.open_private_chat('julia')]
+
     await asyncio.gather(*tasks)
 
 
