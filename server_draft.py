@@ -146,6 +146,12 @@ class Server():
         if number_of_strikes % 3 == 0:
             user['ban_time'] = str(datetime.now() + timedelta(hours=self.ban_time))
 
+    @staticmethod
+    def _is_banned(user):
+        if datetime.strptime(user['ban_time'], '%d-%m-%Y %H:%M') > datetime.now():
+            return True
+        return False
+
 
     async def registration(self, request):
         data = await request.json()
@@ -248,7 +254,8 @@ class Server():
 
 
     async def add_strike(self,request):
-        user = request.match_info['name']
+        # user = request.match_info['name']
+        pass
 
 
 
