@@ -57,7 +57,7 @@ class Client():
                 print(await resp.text())
 
 
-    async def send_message_to_user(self, receiver: str, message: str):
+    async def send_message_to_user(self, receiver: str, message: str) -> None:
         """private chat"""
         async with aiohttp.ClientSession() as session:
             data = await create_private_message(self.username, receiver, message)
@@ -65,11 +65,16 @@ class Client():
                 print(await resp.text())
 
 
-    async def open_private_chat(self, receiver: str):
+    async def open_private_chat(self, receiver: str) -> None:
         async with aiohttp.ClientSession() as session:
             async with session.get(self.url + 'private_chat/' + self.username + '_' + receiver) as resp:
                 print(await resp.text())
 
+
+    async def send_strike(self, receiver: str) -> None:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self.url + 'strike/' + receiver, data=receiver) as resp:
+                print(await(resp.text))
 
 
 

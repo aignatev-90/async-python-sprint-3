@@ -1,4 +1,3 @@
-# import asyncio
 import socket
 from aiohttp import web
 import json
@@ -27,6 +26,8 @@ class Server():
         self.time_limit = 0.5  # limit of time to check number of sent messages in hours
                              # and prevent user from sending new messages
         self.msg_limit = 4  # number of messages available to be sent from user during time_limit
+        self.strikes = 3  # number of strikes for user to be banned
+        self.ban_time = 1  # period of time for user to be banned if got number of strikes == self.strikes
 
     def add_routing(self, routes):
         if self.routes == None:
@@ -140,6 +141,11 @@ class Server():
                 return False
             return True
 
+    @staticmethod
+    def _ban_user(user, number_of_strikes):
+        if number_of_strikes % 3 == 0:
+            user['ban_time'] = str(datetime.now() + timedelta(hours=self.ban_time))
+
 
     async def registration(self, request):
         data = await request.json()
@@ -241,6 +247,12 @@ class Server():
         return web.Response(text=response_obj)
 
 
+    async def add_strike(self,request):
+        user = request.match_info['name']
+
+
+
+
 if __name__ == '__main__':
     server = Server(host='localhost', port=2007)
     server.add_routing([
@@ -250,5 +262,6 @@ if __name__ == '__main__':
         web.get('/info', server.show_status),
         web.post('/private_chat{users}', server.post_to_private_chat),
         web.get('/private_chat/{users}', server.get_private_chat),
+        web.post('/strike/{name}', server.add_strike)
     ])
     server.start()

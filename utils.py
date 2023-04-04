@@ -14,8 +14,8 @@ async def create_user(username: str) -> dict:
                 'id': 0,
                 'name': username,
                 'status': 'active',
+                'strikes': 0,
                 'ban_time': '',
-                'messages_per_hour': 0,
             }
     return data
 
