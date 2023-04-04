@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 CWD = os.getcwd()
 HOST = 'localhost'
 PORT = 2007
-USERS = 'users.json'  # users db
-MAIN_CHAT = 'main_chat.json'
-FOLDER = 'private_chats'
+USERS = 'dbs/users.json'  # users db
+MAIN_CHAT = 'dbs/main_chat.json'
+# FOLDER = 'private_chats'
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -79,12 +79,12 @@ class Server():
 
 
     @staticmethod
-    def _post_to_private_chat(sender, receiver, cwd, folder, req_data):
+    def _post_to_private_chat(sender, receiver, cwd, req_data):
         users = []
         users.extend([sender, receiver])
         users.sort()
-        filename = str(users[0]) + '_' + str(users[1]) + '.json'
-        path = os.path.join(cwd, folder, filename)
+        filename = 'dbs/' + str(users[0]) + '_' + str(users[1]) + '.json'
+        path = os.path.join(cwd, filename)
         message_id = Server._set_id(filename, 'messages')
         req_data['id'] = message_id
         if os.path.exists(filename):
@@ -274,7 +274,7 @@ class Server():
         sender, receiver = request.match_info['users'].split('_')
         data = await request.json()
         if self._user_exists(sender, USERS) and self._user_exists(receiver, USERS):
-            path = self._post_to_private_chat(sender=sender, receiver=receiver, cwd=CWD, folder=FOLDER, req_data=data)
+            path = self._post_to_private_chat(sender=sender, receiver=receiver, cwd=CWD, req_data=data)
             response_obj = 'Message added'
             logging.info('Message from {} to {} sent in private chat'.format(sender, receiver))
             self._delete_old_messages(path)

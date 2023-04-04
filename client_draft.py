@@ -80,11 +80,12 @@ class Client():
 
 async def main():
     # client = Client('http://localhost:2007/', username='kolya',)
-    # client = Client('http://localhost:2007/', username='julia',)
-    client = Client('http://localhost:2007/', username='nastya',)
+    client = Client('http://localhost:2007/', username='julia',)
+    # client = Client('http://localhost:2007/', username='nastya',)
     tasks = []
-    # tasks.append(client.send_message_to_chat('privetuli'))
-    # tasks.append(client.send_message_to_user('julia', 'hello'))
+    # tasks.append(client.registration())
+    tasks.append(client.send_message_to_chat('privetuli'))
+    tasks.append(client.send_message_to_user('kolya', 'hello'))
     tasks.append(client.show_main_chat())
     tasks.append(client.send_strike('julia'))
     await asyncio.gather(*tasks)
