@@ -13,7 +13,6 @@ async def create_user(username: str) -> dict:
     data = {
                 'id': 0,
                 'name': username,
-                'status': 'active',
                 'strikes': 0,
                 'ban_time': '',
             }

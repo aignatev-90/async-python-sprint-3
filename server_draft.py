@@ -116,7 +116,7 @@ class Server():
                         data['messages'].remove(message)
                         logging.info('Old messages deleted')
             with open(source, 'w') as f:
-                f.write(json.dumps(data))
+                f.write(json.dumps(data, indent=4))
         except (PermissionError, FileNotFoundError, FileExistsError):
             logging.error("Failed to delete old messages. Can't access chat database. Source: {}".format(source))
 
@@ -141,16 +141,45 @@ class Server():
                 return False
             return True
 
-    @staticmethod
-    def _ban_user(user, number_of_strikes):
-        if number_of_strikes % 3 == 0:
-            user['ban_time'] = str(datetime.now() + timedelta(hours=self.ban_time))
+
 
     @staticmethod
-    def _is_banned(user):
-        if datetime.strptime(user['ban_time'], '%d-%m-%Y %H:%M') > datetime.now():
-            return True
-        return False
+    def _is_banned(username) -> bool:
+        try:
+            with open(USERS, 'r') as f:
+                data = json.load(f)
+        except (PermissionError, FileNotFoundError, FileExistsError):
+            logging.error("Failed to reach users database. Can't check if user is banned")
+            return False
+        else:
+            try:
+                for user in data['users']:
+                    if user['name'] == username and \
+                            datetime.strptime(user['ban_time'], '%Y-%m-%d %H:%M:%S.%f') > datetime.now():
+                        return True
+                    return False
+            except ValueError:
+                return False
+
+
+    def _ban_users(self):
+        try:
+            with open(USERS, 'r') as f:
+                data = json.load(f)
+        except (PermissionError, FileNotFoundError, FileExistsError):
+            logging.error("Failed to reach users database. Can't ban user")
+        else:
+            for user in data['users']:
+                number_of_strikes = user['strikes']
+                if number_of_strikes != 0 and number_of_strikes % self.strikes == 0:
+                    user['ban_time'] = str(datetime.now() + timedelta(hours=self.ban_time))
+            try:
+                with open(USERS, 'w') as f:
+                    json.dump(data, f, indent=4)
+                logging.info('Users list was checked for bans')
+            except (PermissionError, FileNotFoundError, FileExistsError):
+                logging.error("Failed to reach users database. Can't ban user")
+
 
 
     async def registration(self, request):
@@ -186,8 +215,8 @@ class Server():
     async def post_to_main_chat(self, request):
         data = await request.json()
         username = data['author']
-        if self._check_messages_limit(username=username, msg_limit=self.msg_limit, time_limit=self.time_limit):
-            print('message_ limit_isnt reached')
+        if self._check_messages_limit(username=username, msg_limit=self.msg_limit, time_limit=self.time_limit) \
+                and not self._is_banned(username):
             self._delete_old_messages(MAIN_CHAT)
             try:
                 if self._user_exists(str(username), USERS):
@@ -207,10 +236,10 @@ class Server():
                 response_obj = "Can't connect to main chat database"
                 logging.error(response_obj)
         else:
-            response_obj = 'Max number of messages for user {} during time limit is reached'.format(username)
+            response_obj = 'Max number of messages for user {}' \
+                           ' during time limit is reached or user is banned'.format(username)
             logging.info(response_obj)
         return web.Response(text=response_obj)
-
 
 
     async def show_status(self, request):
@@ -253,11 +282,25 @@ class Server():
         return web.Response(text=response_obj)
 
 
-    async def add_strike(self,request):
-        # user = request.match_info['name']
-        pass
-
-
+    async def add_strike(self, request):
+        username = request.match_info['name']
+        try:
+            with open(USERS, 'r') as f:
+                data = json.load(f)
+        except (PermissionError, FileNotFoundError, FileExistsError):
+            response_obj = "Failed to reach users db. Can't add strike"
+            logging.info(response_obj)
+        else:
+            for user in data['users']:
+                if user['name'] == username:
+                    strikes = int(user['strikes'])
+                    strikes += 1
+                    user['strikes'] = strikes
+            with open(USERS, 'w') as f:
+                json.dump(data, f, indent=4)
+            self._ban_users()
+            response_obj = 'Strike for user {} added'.format(username)
+        return web.Response(text=response_obj)
 
 
 if __name__ == '__main__':
