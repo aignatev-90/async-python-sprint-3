@@ -79,28 +79,14 @@ class Client():
 
 
 async def main():
-    client = Client('http://localhost:2007/', username='kolya',)
+    # client = Client('http://localhost:2007/', username='kolya',)
     # client = Client('http://localhost:2007/', username='julia',)
-    # client = Client('http://localhost:2007/', username='nastya',)
+    client = Client('http://localhost:2007/', username='nastya',)
     tasks = []
-
-
-    # tasks.append(client.registration())
-    # tasks.append(client.send_strike('kolya'))
-    # tasks = [
-    #     client.handle_user('andrey'),
-    #     client.send_message_to_chat(username='andrey', message='hello'),
-    #     client.send_message_to_chat(message='priuet'),
-    # ]
-    tasks.append(client.send_message_to_chat(message='salut'))
-    # tasks.append(client.show_main_chat())
-    #
-    # tasks.append(client.send_message_to_user('katya', 'test_1!')) # ,client.send_message_to_user('julia', 'test_2!')]
-    # tasks.append(client.send_message_to_user('katya', 'test_2!')) # ,client.send_message_to_user('julia', 'test_2!')]
-
-
-    # tasks = [client.open_private_chat('katya')]
-
+    # tasks.append(client.send_message_to_chat('privetuli'))
+    # tasks.append(client.send_message_to_user('julia', 'hello'))
+    tasks.append(client.show_main_chat())
+    tasks.append(client.send_strike('julia'))
     await asyncio.gather(*tasks)
 
 
