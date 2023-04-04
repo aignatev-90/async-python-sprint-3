@@ -6,7 +6,7 @@ from server_draft import Server
 
 
 CWD = os.getcwd()
-FOLDER = 'private_chats'
+FOLDER = 'private_chat'
 
 
 async def create_user(username: str) -> dict:
@@ -28,20 +28,6 @@ async def create_message(username: str, message: str) -> dict:
                 'time': str(datetime.now().strftime('%d-%m-%Y %H:%M')),
             }
     return data
-
-
-# def create_private_chat(user_1: str, user_2: str):
-#     if _user_exists(user_1, USERS) and _user_exists(user_2, USERS):
-#         users = []
-#         users.extend([user_1, user_2])
-#         users.sort()
-#         filename = str(users[0]) + str(users[1]) +'.json'
-#         path = os.path.join(CWD, FOLDER, filename)
-#         print(path)
-#         with open(path, 'a') as f:
-#             f.write('test')
-#     else:
-#         logging.error("Can't create chat. One of the users doesn't exist.")
 
 
 async def create_private_message(author: str, receiver: str, message: str) -> dict:
@@ -73,4 +59,4 @@ def post_to_private_chat(sender, receiver, cwd, folder, req_data):
         holder = {"messages": [data]}
         with open(path, 'a') as f:
             f.write(json.dumps(holder, indent=4))
-
+    return path

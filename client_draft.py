@@ -76,25 +76,27 @@ class Client():
 async def main():
     client = Client('http://localhost:2007/', username='kolya',)
     # client = Client('http://localhost:2007/', username='julia',)
+    tasks = []
 
     # tasks = [client.registration()]
     # tasks = [
     #     client.handle_user('andrey'),
     #     client.send_message_to_chat(username='andrey', message='hello'),
-    #     client.send_message_to_chat(username='masha', message='priuet'),
+    #     client.send_message_to_chat(message='priuet'),
     # ]
-    # tasks = [client.send_message_to_chat(message='salut'), client.show_main_chat()]
-    # tasks = [client.show_main_chat()]
+    tasks.append(client.send_message_to_chat(message='salut'))
+    tasks.append(client.show_main_chat())
 
-    tasks = [client.send_message_to_user('katya', 'test_1!')]# ,client.send_message_to_user('julia', 'test_2!')]
+    tasks.append(client.send_message_to_user('katya', 'test_1!')) # ,client.send_message_to_user('julia', 'test_2!')]
+    tasks.append(client.send_message_to_user('katya', 'test_2!')) # ,client.send_message_to_user('julia', 'test_2!')]
 
-    # tasks = [client.open_private_chat('julia')]
+
+    # tasks = [client.open_private_chat('katya')]
 
     await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    #logging.info(MENU)
 
     asyncio.run(main())
