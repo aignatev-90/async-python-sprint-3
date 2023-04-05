@@ -1,12 +1,18 @@
 from datetime import datetime
 import asyncio
-import os
-
-from server_draft import Server
 
 
-CWD = os.getcwd()
-FOLDER = 'private_chat'
+MENU = 'Welcome to chat. Commands:\n' \
+       'Print "show_users" to see list of users\n' \
+       'Print "show_main_chat" to enter main_chat\n' \
+       'Print "registration" to register\n' \
+       'Print "send_message_to_chat <your message>" to write to main chat\n' \
+       'Print "show_private_chat <username>" to write to users private chat\n' \
+       'Print "write_to_user <username> <your message>" to write to users private chat\n' \
+       'Print "send_strike <username>" to send strike for user\n' \
+       'Push ctrl+c to quit\n' \
+       '\n' \
+       'ENTER YOUR COMMAND\n'
 
 
 async def create_user(username: str) -> dict:
@@ -38,24 +44,3 @@ async def create_private_message(author: str, receiver: str, message: str) -> di
                 'time': str(datetime.now().strftime('%d-%m-%Y %H:%M')),
             }
     return data
-
-
-def post_to_private_chat(sender, receiver, cwd, folder, req_data):
-    users = []
-    users.extend([sender, receiver])
-    users.sort()
-    filename = str(users[0]) + '_' + str(users[1]) + '.json'
-    path = os.path.join(CWD, FOLDER, filename)
-    message_id = Server._set_id(path, 'messages')
-    data['id'] = message_id
-    if os.path.exists(path):
-        with open(path, 'r') as f:
-            chat_entries = json.load(f)
-            chat_entries['messages'].append(data)
-        with open(path, 'w') as f:
-            f.write(json.dumps(chat_entries, indent=4))
-    else:
-        holder = {"messages": [data]}
-        with open(path, 'a') as f:
-            f.write(json.dumps(holder, indent=4))
-    return path

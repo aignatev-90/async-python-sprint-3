@@ -1,22 +1,10 @@
 import json
-
 import aiohttp
 import asyncio
 import logging
 from datetime import datetime
-from utils import create_user, create_message, create_private_message
-
-
-
-MENU = 'Welcome to chat. Commands:\n' \
-         'Print "main" to enter main_chat\n' \
-         'Push ctrl+c to quit\n' \
-         'Print "add_message" to write message to main chat\n' \
-         'Print username to write to private chat of the user\n' \
-         '\n' \
-         'ENTER YOUR COMMAND\n'
-
-
+from utils import create_user, create_message, create_private_message, MENU
+import sys
 
 
 
@@ -29,12 +17,6 @@ class Client():
         async with aiohttp.ClientSession() as session:
             async with session.get(self.url + 'info') as resp:
                 print(await resp.text())
-
-
-    # async def login(self, session, username: str) -> None:
-    #     async with aiohttp.ClientSession() as session:
-    #         async with session.post('http://localhost:2007/login', json={'name': username}) as resp:
-    #             print(await resp.text())
 
 
     async def registration(self) -> None:
@@ -78,20 +60,49 @@ class Client():
 
 
 
-async def main():
-    # client = Client('http://localhost:2007/', username='kolya',)
-    client = Client('http://localhost:2007/', username='julia',)
-    # client = Client('http://localhost:2007/', username='nastya',)
-    tasks = []
-    # tasks.append(client.registration())
-    tasks.append(client.send_message_to_chat('privetuli'))
-    tasks.append(client.send_message_to_user('kolya', 'hello'))
-    tasks.append(client.show_main_chat())
-    tasks.append(client.send_strike('julia'))
-    await asyncio.gather(*tasks)
-
-
 if __name__ == '__main__':
+    tasks = []
     logging.basicConfig(level=logging.DEBUG)
 
-    asyncio.run(main())
+    async def main():
+        logging.info('Enter username:\n')
+        username = str(input())
+        client = Client('http://localhost:2007/', username=username,)
+
+        while True:
+            logging.info(MENU)
+            command = str(input())
+            try:
+                if 'show_main_chat' in command:
+                    task = asyncio.create_task(client.show_main_chat())
+                elif 'show_users' in command:
+                    task = asyncio.create_task(client.show_status())
+                elif 'registration' in command:
+                    task = asyncio.create_task(client.registration())
+                elif 'send_message_to_chat' in command:
+                    com, text = command.split(' ')
+                    task = asyncio.create_task(client.send_message_to_chat(text))
+                elif 'show_private_chat' in command:
+                    com, user = command.split(' ')
+                    task = asyncio.create_task(client.open_private_chat(user))
+                elif 'write_to_user' in command:
+                    com, user, msg = command.split(' ')
+                    task = asyncio.create_task(client.send_message_to_user(user, msg))
+                elif 'send_strike' in command:
+                    com, user = command.split(' ')
+                    task = asyncio.create_task(client.send_strike(user))
+                else:
+                    logging.info('Wrong command. Try again\n')
+            except ValueError:
+                logging.info('Wrong command. Try again\n')
+
+
+            await task
+
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info('C ya!')
+        for task in tasks:
+            task.cancel()
+        sys.exit(130)
