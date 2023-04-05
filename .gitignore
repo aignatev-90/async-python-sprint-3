@@ -1,4 +1,3 @@
-
 .idea/
 __pycache__/
 *.pyc
@@ -7,3 +6,5 @@ __pycache__/
 *.txt
 *.json
 draft.py
+client_draft.py
+server_draft.py
