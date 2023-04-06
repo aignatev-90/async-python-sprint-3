@@ -8,3 +8,4 @@ __pycache__/
 draft.py
 client_draft.py
 server_draft.py
+!requirements.txt
