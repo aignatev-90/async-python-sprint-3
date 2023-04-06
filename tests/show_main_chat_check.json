@@ -1,0 +1,28 @@
+{
+    "messages": [
+        {
+            "id": 1,
+            "author": "katya",
+            "text": "hello!",
+            "time": "05-04-2023 18:40"
+        },
+        {
+            "id": 2,
+            "author": "katya",
+            "text": "hello!",
+            "time": "05-04-2023 18:40"
+        },
+        {
+            "id": 3,
+            "author": "katya",
+            "text": "hello!",
+            "time": "05-04-2023 18:40"
+        },
+        {
+            "id": 4,
+            "author": "katya",
+            "text": "hello!",
+            "time": "05-04-2023 18:40"
+        }
+    ]
+}

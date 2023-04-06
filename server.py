@@ -33,6 +33,9 @@ class Server():
             self.app.add_routes(routes)
 
     def start(self) -> None:
+        if not os.path.exists(CWD + '/dbs'):
+            os.mkdir(CWD + '/dbs')
+
         web.run_app(self.app, host=self.host, port=self.port)
 
     @staticmethod
@@ -70,7 +73,7 @@ class Server():
     async def _show_chat(source_chat: str, entries: int) -> str:
         try:
             chat = ''
-            with open(source_chat, 'r') as f:
+            with open('dbs/' + source_chat, 'r') as f:
                 data = json.load(f)
                 try:
                     if len(data['messages']) == 0:
@@ -83,7 +86,7 @@ class Server():
                     return error
             return chat
         except (PermissionError, FileNotFoundError):
-            logging.error("Can't reach chat database")
+            logging.error(f"Can't reach chat database {source_chat}")
 
     @staticmethod
     def _post_to_private_chat(sender: str, receiver: str, cwd: str, req_data: dict) -> str:
@@ -218,9 +221,9 @@ class Server():
                 with open(USERS, 'w') as f:
                     json.dump(d, f, indent=4)
             except (PermissionError, FileNotFoundError):
-                response_obj = {'status': 'failed', 'message': str(e)}
+                response_obj = str(e) + '\n'
             else:
-                response_obj = {'status': 'success', 'message': f'user {username} successfully created'}
+                response_obj = f'user {username} successfully created' + '\n'
         else:
             try:
                 logging.info('Trying to create user {}'.format(username))
@@ -232,14 +235,14 @@ class Server():
                     users_entries['users'].append(data)
                     with open(USERS, 'w') as f:
                         f.write(json.dumps(users_entries, indent=4))
-                    response_obj = {'status': 'success', 'message': f'user {username} successfully created'}
+                    response_obj = f'user {username} successfully created' + '\n'
                 else:
-                    response_obj = {'status': 'failure', 'message': f'user {username} already exists'}
+                    response_obj = f'user {username} already exists' '\n'
             except (PermissionError, FileNotFoundError):
                 logging.info('Failed creating user {}. {}'.format(username, str(e)))
                 response_obj = {'status': 'failed', 'message': str(e)}
 
-        return web.Response(text=json.dumps(response_obj), status=200)
+        return web.Response(text=response_obj, status=200)
 
     async def get_main_chat(self, request):
         self._delete_old_messages(MAIN_CHAT)
@@ -348,7 +351,7 @@ class Server():
             users.sort()
             filename = str(users[0]) + '_' + str(users[1] + '.json')
             self._delete_old_messages(filename)
-            response_obj = await Server._show_chat(filename, self.show_messages)
+            response_obj = await self._show_chat(filename, self.show_messages)
             return web.Response(text='\n' + response_obj + '\n', status=200)
 
     async def add_strike(self, request):

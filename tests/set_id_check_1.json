@@ -1,0 +1,16 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "name": "petya",
+            "strikes": 0,
+            "ban_time": ""
+        },
+        {
+            "id": 2,
+            "name": "katya",
+            "strikes": 0,
+            "ban_time": ""
+        }
+    ]
+}

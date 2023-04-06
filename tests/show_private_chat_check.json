@@ -1,0 +1,11 @@
+{
+    "messages": [
+        {
+            "id": 1,
+            "author": "katya",
+            "receiver": "petya",
+            "text": "hello!",
+            "time": "05-04-2023 18:39"
+        }
+    ]
+}
