@@ -1,10 +1,10 @@
-import asyncio
 import os
 import unittest
-from server import Server
-import asyncio
-from utils import create_private_message
+
 from private_chat_post_check import test_data
+
+from server import Server
+from utils import create_private_message
 
 
 class ServerUtilsTest(unittest.TestCase):

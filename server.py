@@ -1,10 +1,9 @@
-import socket
-from aiohttp import web
 import json
 import logging
 import os
 from datetime import datetime, timedelta
-from functools import wraps
+
+from aiohttp import web
 
 CWD = os.getcwd()
 HOST = 'localhost'
@@ -136,11 +135,15 @@ class Server():
                             data['messages'].remove(message)
                             logging.info('Old messages deleted')
                 except (KeyError, ValueError):
-                    logging.error(f"Failed to delete old messages. Can't access chat database. Source: {source}")
+                    logging.error(
+                        f"Failed to delete old messages."
+                        f" Can't access chat database. Source: {source}")
             with open(source, 'w') as f:
                 f.write(json.dumps(data, indent=4))
         except (PermissionError, FileNotFoundError):
-            logging.error("Failed to delete old messages. Can't access chat database. Source: {}".format(source))
+            logging.error(
+                "Failed to delete old messages."
+                " Can't access chat database. Source: {}".format(source))
 
     @staticmethod
     def _check_messages_limit(username: str, time_limit: (float, int), msg_limit: int) -> bool:
@@ -220,7 +223,7 @@ class Server():
             try:
                 with open(USERS, 'w') as f:
                     json.dump(d, f, indent=4)
-            except (PermissionError, FileNotFoundError):
+            except (PermissionError, FileNotFoundError) as e:
                 response_obj = str(e) + '\n'
             else:
                 response_obj = f'user {username} successfully created' + '\n'
@@ -238,7 +241,7 @@ class Server():
                     response_obj = f'user {username} successfully created' + '\n'
                 else:
                     response_obj = f'user {username} already exists' '\n'
-            except (PermissionError, FileNotFoundError):
+            except (PermissionError, FileNotFoundError) as e:
                 logging.info('Failed creating user {}. {}'.format(username, str(e)))
                 response_obj = {'status': 'failed', 'message': str(e)}
 

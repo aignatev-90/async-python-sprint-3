@@ -1,10 +1,11 @@
-import json
-import aiohttp
 import asyncio
+import json
 import logging
-from datetime import datetime
-from utils import create_user, create_message, create_private_message, MENU
 import sys
+
+import aiohttp
+
+from utils import MENU, create_message, create_private_message, create_user
 
 
 class Client():
@@ -20,12 +21,12 @@ class Client():
     async def registration(self) -> None:
         async with aiohttp.ClientSession() as session:
             data = await create_user(self.username)
-            async with session.post(self.url+'registration', data=json.dumps(data)) as resp:
+            async with session.post(self.url + 'registration', data=json.dumps(data)) as resp:
                 print(await resp.text())
 
     async def show_main_chat(self) -> None:
         async with aiohttp.ClientSession() as session:
-            async with session.get(self.url+'main_chat') as resp:
+            async with session.get(self.url + 'main_chat') as resp:
                 print(await resp.text())
 
     async def send_message_to_chat(self, message: str) -> None:
@@ -38,12 +39,16 @@ class Client():
         """private chat"""
         async with aiohttp.ClientSession() as session:
             data = await create_private_message(self.username, receiver, message)
-            async with session.post(self.url + 'private_chat' + self.username + '_' + receiver, data=json.dumps(data)) as resp:
+            async with session.post(
+                    self.url + 'private_chat' + self.username + '_' + receiver, data=json.dumps(data)
+            ) as resp:
                 print(await resp.text())
 
     async def open_private_chat(self, receiver: str) -> None:
         async with aiohttp.ClientSession() as session:
-            async with session.get(self.url + 'private_chat/' + self.username + '_' + receiver) as resp:
+            async with session.get(
+                    self.url + 'private_chat/' + self.username + '_' + receiver
+            ) as resp:
                 print(await resp.text())
 
     async def send_strike(self, receiver: str) -> None:
@@ -87,7 +92,6 @@ if __name__ == '__main__':
                     logging.info('Wrong command. Try again\n')
             except ValueError:
                 logging.info('Wrong command. Try again\n')
-
 
             await t
 

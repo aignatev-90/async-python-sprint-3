@@ -1,6 +1,4 @@
 from datetime import datetime
-import asyncio
-
 
 MENU = 'Welcome to chat. Commands:\n' \
        'Print "show_users" to see list of users\n' \
