@@ -210,6 +210,48 @@ class Server():
             except (PermissionError, FileNotFoundError):
                 logging.error("Failed to reach users database. Can't ban user")
 
+
+    def post_message(self, username, data):
+        if not os.path.exists(MAIN_CHAT):
+            data['id'] = self._set_id(MAIN_CHAT, 'messages')
+            d = {"messages": [data]}
+            try:
+                with open(MAIN_CHAT, 'w') as f:
+                    json.dump(d, f, indent=4)
+                response_obj = 'Message from {} successfully added'.format(username)
+            except (PermissionError, FileNotFoundError):
+                response_obj = "Can't post message to main chat. Can't access database"
+                logging.error(response_obj)
+            return web.Response(text='\n' + response_obj + '\n', status=200)
+        else:
+            try:
+                self._delete_old_messages(MAIN_CHAT)
+                if self._user_exists(str(username), USERS):
+                    message_id = Server._set_id(MAIN_CHAT, 'messages')
+                    with open(MAIN_CHAT, 'r') as f:
+                        try:
+                            data['id'] = message_id
+                        except (KeyError, ValueError):
+                            response_obj = "Wrong file format for main chat database. Can't add message"
+                            logging.error(response_obj)
+                        else:
+                            chat_entries = json.load(f)
+                            try:
+                                chat_entries['messages'].append(data)
+                            except (KeyError, ValueError):
+                                response_obj = "Wrong file format for main chat database. Can't add message"
+                                logging.error(response_obj)
+                    with open(MAIN_CHAT, 'w') as f:
+                        f.write(json.dumps(chat_entries, indent=4))
+                    response_obj = 'Message from user %s added' % username
+                    logging.info(response_obj)
+                else:
+                    response_obj = "Message wasn't sent. User with this username doesn't exist"
+                    logging.info(response_obj)
+            except (PermissionError, FileNotFoundError):
+                response_obj = "Can't connect to main chat database"
+                logging.error(response_obj)
+        return response_obj
     async def registration(self, request):
         data = await request.json()
         try:
@@ -259,54 +301,14 @@ class Server():
         except (KeyError, ValueError):
             logging.error('Bad request. Wrong request format')
             return web.Response(text='Wrong request format', status=400)
-
         if self._check_messages_limit(username=username, msg_limit=self.msg_limit, time_limit=self.time_limit) \
                 and not self._is_banned(username):
-            if not os.path.exists(MAIN_CHAT):
-                data['id'] = self._set_id(MAIN_CHAT, 'messages')
-                d = {"messages": [data]}
-                try:
-                    with open(MAIN_CHAT, 'w') as f:
-                        json.dump(d, f, indent=4)
-                    response_obj = 'Message from {} successfully added'.format(username)
-                except (PermissionError, FileNotFoundError):
-                    response_obj = "Can't post message to main chat. Can't access database"
-                    logging.error(response_obj)
-                return web.Response(text='\n' + response_obj + '\n', status=200)
-            else:
-                try:
-                    self._delete_old_messages(MAIN_CHAT)
-                    if self._user_exists(str(username), USERS):
-                        message_id = Server._set_id(MAIN_CHAT, 'messages')
-                        with open(MAIN_CHAT, 'r') as f:
-                            try:
-                                data['id'] = message_id
-                            except (KeyError, ValueError):
-                                response_obj = "Wrong file format for main chat database. Can't add message"
-                                logging.error(response_obj)
-                            else:
-                                chat_entries = json.load(f)
-                                try:
-                                    chat_entries['messages'].append(data)
-                                except (KeyError, ValueError):
-                                    response_obj = "Wrong file format for main chat database. Can't add message"
-                                    logging.error(response_obj)
-                        with open(MAIN_CHAT, 'w') as f:
-                            f.write(json.dumps(chat_entries, indent=4))
-                        response_obj = 'Message from user %s added' % username
-                        logging.info(response_obj)
-                    else:
-                        response_obj = "Message wasn't sent. User with this username doesn't exist"
-                        logging.info(response_obj)
-                    return web.Response(text='\n' + response_obj + '\n', status=200)
-                except (PermissionError, FileNotFoundError):
-                    response_obj = "Can't connect to main chat database"
-                    logging.error(response_obj)
+            response_obj = self.post_message(username=username, data=data)
         else:
             response_obj = 'Max number of messages for user {}' \
                            ' during time limit is reached or user is banned'.format(username)
             logging.info(response_obj)
-            return web.Response(text='\n' + response_obj + '\n', status=200)
+        return web.Response(text='\n' + response_obj + '\n', status=200)
 
     async def show_status(self, request):
         response_obj = 'Current users:\n'
