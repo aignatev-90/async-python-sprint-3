@@ -293,7 +293,7 @@ class Server:
 
         return web.Response(text=response_obj, status=200)
 
-    async def get_main_chat(self):
+    async def get_main_chat(self, request):
         self._delete_old_messages(MAIN_CHAT)
         response_obj = await self._show_chat(MAIN_CHAT, self.show_messages)
         return web.Response(text='\n' + response_obj + '\n', status=200)
@@ -314,7 +314,7 @@ class Server:
             logging.info(response_obj)
         return web.Response(text='\n' + response_obj + '\n', status=200)
 
-    async def show_status(self):
+    async def show_status(self, request):
         response_obj = 'Current users:\n'
         try:
             with open(USERS, 'r') as f:
