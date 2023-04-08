@@ -5,16 +5,18 @@ from datetime import datetime, timedelta
 
 from aiohttp import web
 
+from settings import Settings
+
 CWD = os.getcwd()
-HOST = 'localhost'
-PORT = 2007
-USERS = 'dbs/users.json'  # users db
-MAIN_CHAT = 'dbs/main_chat.json'
+settings = Settings()
+HOST, PORT = settings.APP_HOST, settings.APP_PORT
+USERS = settings.USERS_DB  # users db
+MAIN_CHAT = settings.MAIN_CHAT_DB  # main_chat db
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-class Server():
+class Server:
     def __init__(self, host: str, port: int, routes=None):
         self.host = host
         self.port = port
@@ -72,7 +74,7 @@ class Server():
     async def _show_chat(source_chat: str, entries: int) -> str:
         try:
             chat = ''
-            with open('dbs/' + source_chat, 'r') as f:
+            with open(source_chat, 'r') as f:
                 data = json.load(f)
                 try:
                     if len(data['messages']) == 0:
@@ -80,12 +82,14 @@ class Server():
                     for entry in data['messages'][-entries:]:
                         chat += "{} {}: {} \n".format(entry['time'], entry['author'], entry['text'])
                 except (KeyError, ValueError):
-                    error = "Can't show main chat. Wrong database format"
+                    error = "Can't show chat. Wrong database format"
                     logging.error(error)
                     return error
             return chat
-        except (PermissionError, FileNotFoundError):
-            logging.error(f"Can't reach chat database {source_chat}")
+        except (PermissionError, FileNotFoundError) as e:
+            text = f"Can't reach chat database {source_chat}"
+            logging.error(text + str(e))
+            return text
 
     @staticmethod
     def _post_to_private_chat(sender: str, receiver: str, cwd: str, req_data: dict) -> str:
@@ -98,8 +102,8 @@ class Server():
         try:
             req_data['id'] = message_id
         except (KeyError, ValueError):
-            logging.error('Bad request. Wrong request format')
-            return web.Response(text='Wrong request format', status=400)
+            text = 'Bad request. Wrong request format'
+            logging.error(text)
         if os.path.exists(filename):
             try:
                 with open(filename, 'r') as f:
@@ -210,7 +214,6 @@ class Server():
             except (PermissionError, FileNotFoundError):
                 logging.error("Failed to reach users database. Can't ban user")
 
-
     def post_message(self, username, data):
         if not os.path.exists(MAIN_CHAT):
             data['id'] = self._set_id(MAIN_CHAT, 'messages')
@@ -222,7 +225,6 @@ class Server():
             except (PermissionError, FileNotFoundError):
                 response_obj = "Can't post message to main chat. Can't access database"
                 logging.error(response_obj)
-            return web.Response(text='\n' + response_obj + '\n', status=200)
         else:
             try:
                 self._delete_old_messages(MAIN_CHAT)
@@ -246,12 +248,14 @@ class Server():
                     response_obj = 'Message from user %s added' % username
                     logging.info(response_obj)
                 else:
-                    response_obj = "Message wasn't sent. User with this username doesn't exist"
+                    response_obj = "Message wasn't sent. You need to register first." \
+                                   " Type 'registration' as your next command"
                     logging.info(response_obj)
             except (PermissionError, FileNotFoundError):
                 response_obj = "Can't connect to main chat database"
                 logging.error(response_obj)
         return response_obj
+
     async def registration(self, request):
         data = await request.json()
         try:
@@ -289,7 +293,7 @@ class Server():
 
         return web.Response(text=response_obj, status=200)
 
-    async def get_main_chat(self, request):
+    async def get_main_chat(self):
         self._delete_old_messages(MAIN_CHAT)
         response_obj = await self._show_chat(MAIN_CHAT, self.show_messages)
         return web.Response(text='\n' + response_obj + '\n', status=200)
@@ -310,7 +314,7 @@ class Server():
             logging.info(response_obj)
         return web.Response(text='\n' + response_obj + '\n', status=200)
 
-    async def show_status(self, request):
+    async def show_status(self):
         response_obj = 'Current users:\n'
         try:
             with open(USERS, 'r') as f:
@@ -354,7 +358,7 @@ class Server():
             users = []
             users.extend([user_1, user_2])
             users.sort()
-            filename = str(users[0]) + '_' + str(users[1] + '.json')
+            filename = 'dbs/' + str(users[0]) + '_' + str(users[1] + '.json')
             self._delete_old_messages(filename)
             response_obj = await self._show_chat(filename, self.show_messages)
             return web.Response(text='\n' + response_obj + '\n', status=200)
